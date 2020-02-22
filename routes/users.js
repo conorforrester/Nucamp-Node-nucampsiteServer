@@ -7,27 +7,44 @@ const router = express.Router();
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-    res.send('respond with a resource');
+    if (req.user.admin) {
+        return User.find();
+    } else {
+        const err = new Error('You are not an admin!');
+        err.status = 403;
+        return next(err);
+    }
 });
 
 router.post('/signup', (req, res) => {
-    User.register(
-        new User({username: req.body.username}),    //create user from name that is provided by the client
-        req.body.password,  //password passed from client
-        err => {
-            if (err) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.json({err: err});
-            } else {
+    User.register(new User({username: req.body.username}),  //create user from name provided by client
+    req.body.password, (err, user) => { //password passed in from client
+        if (err) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.json({err: err});
+        } else {
+            if (req.body.firstname) {
+                user.firstname = req.body.firstname;
+            }
+            if (req.body.lastname) {
+                user.lastname = req.body.lastname;
+            }
+            user.save(err => {
+                if (err) {
+                    res.statusCode = 500;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json({err: err});
+                    return;
+                }
                 passport.authenticate('local')(req, res, () => {
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.json({success: true, status: 'Registration Successful!'});
                 });
-            }
+            });
         }
-    );
+    });
 });
 
 router.post('/login', passport.authenticate('local'), (req, res) => {
