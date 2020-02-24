@@ -28,6 +28,16 @@ const partnerRouter = require('./routes/partnerRouter');
 
 var app = express();
 
+// Secure traffic only
+app.all('*', (req, res, next) => {  //app.all catches any type of request coming into the server, use asterisk for wildcard request
+  if (req.secure) { //.secure is set automatically to true
+    return next();
+  } else {  //if not secure, redirect to a secure link
+      console.log(`Redirecting to: https://${req.hostname}:${app.get('secPort')}${req.url}`);
+      res.redirect(301, `https://${req.hostname}:${app.get('secPort')}${req.url}`);
+  }
+});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
